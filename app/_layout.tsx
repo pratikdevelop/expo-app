@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 import { Header } from "react-native-elements";
+import App from "./App";
 
 export default function RootLayout() {
   return (
@@ -9,9 +10,8 @@ export default function RootLayout() {
   style={{backgroundColor:"blue"}}
   leftComponent={{ text: 'Passkeeeper', style: { color: '#fff' } }}
 />
-    <Stack>
-      <Stack.Screen options={{navigationBarHidden: false}} name="index" />
-    </Stack>
+
+    <App/>
     </>
   )
 }
