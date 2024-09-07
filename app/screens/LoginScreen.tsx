@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Input, Button } from 'react-native-elements';
-import { useNavigation } from '@react-navigation/native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Formik } from 'formik';
+import { useNavigation } from '@react-navigation/native';
 import * as Yup from 'yup';
+import { Button, TextInput } from "@react-native-material/core";
+import axios from 'axios';
 
 const LoginSchema = Yup.object().shape({
   username: Yup.string().required('Username is required'),
   password: Yup.string().required('Password is required'),
 });
 
-const LoginScreen = () => {
+const LoginScreen = ({navigation}: {
+  navigation: any
+}) => {
   const [hidePassword, setHidePassword] = useState(true);
-  const navigation = useNavigation();
 
   const togglePasswordVisibility = () => {
     setHidePassword(!hidePassword);
@@ -26,52 +28,65 @@ const LoginScreen = () => {
           validationSchema={LoginSchema}
           onSubmit={(values) => {
             console.log(values);
-            // navigation.navigate('Home');
+            axios.post('http://localhost:3000/api/auth/login', values).then((res)=>{
+              console.log(res.data);
+              if (res.data.mfaRequired) {
+                
+                    navigation.navigate('MFAVerification', { mfaMethod: res.data.mfaMethod, email: values.username });
+                 
+              } else {
+                localStorage.setItem('token', res.data.token)
+                navigation.navigate('Home');
+              }
+            })
           }}
         >
           {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
-            <View style={styles.form} >
+            <View style={styles.form}>
               <Text style={styles.title}>Login with your account</Text>
-              <Input
-              style={{borderWidth: 0}}
+              <TextInput
+                 variant='outlined'
                 placeholder="Enter your username"
-                onChangeText={handleChange('username')}
-                onBlur={handleBlur('username')}
-                value={values.username}
-                errorMessage={errors.username && touched.username ? errors.username : ''}
-              />
-              <Input
-              style={{borderWidth: 0}}
+                onChangeText={
+                  handleChange('username')
+        
+                }
+                onBlur={() => {
+                  handleBlur('username');
+                  console.log('rrr', values)
 
+                }}
+                value={values.username}
+                // errorMessage={errors.username && touched.username ? errors.username : ''}
+              />
+              <TextInput
+                variant='outlined'
                 placeholder="Enter your password"
                 secureTextEntry={hidePassword}
-                rightIcon={{
-                  type: 'material',
-                  name: hidePassword ? 'visibility-off' : 'visibility',
-                  onPress: togglePasswordVisibility,
-                }}
                 onChangeText={handleChange('password')}
-                onBlur={handleBlur('password')}
+                onBlur={() => {
+                  handleBlur('password');
+                }}
                 value={values.password}
-                errorMessage={errors.password && touched.password ? errors.password : ''}
+                // errorMessage={errors.password && touched.password ? errors.password : ''}
               />
               <TouchableOpacity
                 // onPress={() => navigation.navigate(['Signup'])}
                 style={styles.linkContainer}
               >
-                <Text style={styles.link}>Not have an account? Signup now</Text>
+                <Text style={styles.link}>Forget Password</Text>
               </TouchableOpacity>
               <Button
                 title="Login Now"
-                // onPress={handleSubmit}
-                disabled={!values.username || !values.password || !!errors.username || !!errors.password}
+                onPress={handleSubmit}
+                // disabled={!values.username || !values.password || !!errors.username || !!errors.password}
               />
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 // onPress={() => navigation.navigate('ResetPassword')}
                 style={styles.linkContainer}
               >
                 <Text style={styles.link}>Forgot Password?</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
           )}
         </Formik>
@@ -83,31 +98,29 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'row',
+    justifyContent: 'center',
+    padding: 16,
   },
   formContainer: {
-    flex: 1,
-    backgroundColor: 'white',
-    paddingHorizontal: 16,
-    paddingVertical: 200,
+    margin: 16,
   },
   form: {
     flexDirection: 'column',
     rowGap:20
   },
   title: {
-    textAlign: 'center',
     fontSize: 24,
-    fontWeight:800,
-    marginBottom: 16,
+    fontWeight: 'bold',
+    marginBottom: 24,
+    textAlign: 'center',
   },
   linkContainer: {
-    alignItems: 'flex-end',
-    marginVertical: 8,
+    marginVertical: 12,
   },
   link: {
-    color: '#1e90ff',
-    fontSize: 14,
+    color: '#007bff',
+    textAlign: 'center',
+    fontSize: 16,
   },
 });
 
