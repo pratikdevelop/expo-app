@@ -1,3 +1,4 @@
+import axiosConfig from '@/axios-config';
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -8,18 +9,15 @@ const NotesScreen = () => {
   const [search, setSearch] = useState('');
   
   useEffect(() => {
-    axios
-      .get(`http://localhost:3000/api/notes?search=${search}`, {
-        headers: {
-          Authorization: "Bearer " + localStorage.getItem("token"),
-        },
+    axiosConfig
+      .get(`/notes?search=${search}`, {
+        
       })
       .then((res:{
         data: {
-          data: any[];
+          data: any;
         };
       }) => {
-        console.log('ff', res);
         setNotes(res.data.data);
         
       });
@@ -43,7 +41,7 @@ const NotesScreen = () => {
             <DataTable.Title>Actions</DataTable.Title>
           </DataTable.Header>
 
-          {notes.map((item) => (
+          {notes.map((item: any) => (
             <DataTable.Row key={item._id}>
               <DataTable.Cell>{item.title}</DataTable.Cell>
               <DataTable.Cell>{item.content}</DataTable.Cell>

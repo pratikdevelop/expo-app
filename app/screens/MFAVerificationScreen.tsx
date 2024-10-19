@@ -1,7 +1,8 @@
-import axios from 'axios';
 import React, { useState } from 'react';
 import {  Text, TextInput, Button } from '@react-native-material/core' ;
 import { View, StyleSheet } from 'react-native';
+import axiosConfig from '@/axios-config';
+
 
 const MFAVerificationScreen = ({ navigation, route }:
     {
@@ -12,20 +13,19 @@ const MFAVerificationScreen = ({ navigation, route }:
   const [mfaCode, setMfaCode] = useState('');
   const [error, setError] = useState(null);
   const email = route.params.email;
-  console.log('email', email);
   
 
-  const handleVerifyMfaCode = () => {
-    const apiUrl = 'http://localhost:3000/api/auth/verify-mfa';
-    axios.post(apiUrl, { mfaCode, email })
-      .then((res: { data: { token: string; }; }) => {
-        console.log(res.data);
-        localStorage.setItem('token', res.data.token)
-        navigation.navigate('Home');
-      })
-      .catch((error: { message: any; }) => {
-        setError(error.message);
-      });
+  const handleVerifyMfaCode = async() => {
+    try {
+      const apiUrl = '/auth/verify-mfa';
+      const response = await axiosConfig.post(apiUrl, { mfaCode, email })
+      console.log(response.data);
+      await localStorage.setItem('token', response.data.token)
+      navigation.navigate('Home');
+    } catch (error: any) {
+      setError(error.message);
+    }
+
   };
 
   return (

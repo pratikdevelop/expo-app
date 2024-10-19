@@ -1,21 +1,17 @@
 import { Stack } from "expo-router";
-import { Provider as PaperProvider } from 'react-native-paper';
-
+import { Provider as PaperProvider } from "react-native-paper";
+import { Provider } from 'react-redux';
+import store from '.././store/store';
 import App from "./App";
 
 export default function RootLayout() {
   return (
     <>
-    {/* <Header
-  placement="left"
-  style={{backgroundColor:"blue"}}
-  leftComponent={{ text: 'Passkeeeper', style: { color: '#fff' } }}
-/> */}
-    <PaperProvider>
-
-
-    <App/>
-    </PaperProvider>
+      <Provider store={store}>
+      <PaperProvider>
+        <App />
+      </PaperProvider>
+      </Provider>
     </>
-  )
+  );
 }

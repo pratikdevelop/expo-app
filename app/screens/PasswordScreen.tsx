@@ -1,125 +1,127 @@
-import axios from 'axios';
-import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { DataTable, TextInput, Button } from 'react-native-paper';
-import { Menu, IconButton } from 'react-native-paper';
+import BottomDrawerExample from "@/components/BottomDrawer";
+import { createDrawerNavigator } from "@react-navigation/drawer";
+import React, { useEffect, useState } from "react";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  TextInput,
+  IconButton,
+  List,
+  Button,
+  Dialog,
+  Portal,
+  Text,
+} from "react-native-paper"; // Import Button from react-native-paper
+import PasswordViewScreen from "./PasswordViewScreen";
+// import Dialog, {
+//   DialogContent,
+//   SlideAnimation,
+// } from "react-native-popup-dialog";
 
-const PasswordScreen = () => {
-  const [password, setPassword] = useState<any[]>([]);
-  const [search, setsearch] = useState<string | undefined>();
-  const [visible, setVisible] = useState<string | null>(null); // To control the visibility of the menu
-  const [currentItem, setCurrentItem] = useState<any>(null); // To store the current item for menu actions
+import service from "./../../services/passwordservice"; // Adjust the import path as necessary
+import AntDesign from "@expo/vector-icons/AntDesign";
+import PasswordForm from "@/components/PasswordForm";
+const PasswordScreen = ({ navigation }: any) => {
+  const Drawer = createDrawerNavigator();
+  const [passwords, setPasswords] = useState<any[]>([]);
+  const [search, setSearch] = useState<string | undefined>();
+  const [visibleMenu, setVisibleMenu] = useState<string | null>(null);
+  const [password, setPassword] = useState<any>(null);
+  const [openDrawer, setDrawerOpen] = useState<boolean>(false);
+  const [showModel, setShowModel] = useState(false);
 
   useEffect(() => {
-    axios
-      .get(`http://localhost:3000/api/passwords?search=${search}`, {
-        headers: {
-          Authorization: "Bearer " + localStorage.getItem("token"),
-        },
-      })
-      .then((res:{
-        data: {
-          data: any[];
-        };
-      }) => {
-        console.log('ff', res);
-        
-        setPassword(res.data.data);
-      });
+    getPasswords();
   }, [search]);
 
-  const openMenu = (itemId: string) => {
-    setVisible(itemId);
-  };
-
-  const closeMenu = () => setVisible(null);
-
-  const handleAction = (action: string) => {
-    if (action === 'launch') {
-      // Implement launch action
-    } else if (action === 'edit') {
-      // Implement edit action
-    } else if (action === 'delete') {
-      // Implement delete action
-    } else if (action === 'share') {
-      // Implement share action
-    } else if (action === 'view') {
-      // Implement view action
+  const getPasswords = async () => {
+    try {
+      const data = await service.fetchPasswords(search);
+      setPasswords(data);
+    } catch (error) {
+      console.error("Error fetching passwords:", error);
     }
-    closeMenu();
   };
+
+  const openMenu = (item: any) => {
+    if (item._id === visibleMenu) {
+      setVisibleMenu(null);
+    } else {
+      setVisibleMenu(item._id);
+      setPassword(item);
+    }
+  };
+
+  const toggleDrawer = () => {
+    setDrawerOpen(!openDrawer);
+  };
+
+  const closeMenu = (_action: string) => {
+    if (_action === "delete") {
+      // Handle delete action if needed
+    }
+    setDrawerOpen(true);
+    setVisibleMenu(null);
+  };
+
+  const toggleFavourite = async (passwordId: string) => {
+    try {
+      await service.fetchPasswords(passwordId);
+      getPasswords();
+    } catch (error) {
+      console.error("Error fetching passwords:", error);
+    }
+  };
+
+  function hideDialog(): void {
+    setShowModel(false)
+  }
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'white' }}>
-      <ScrollView style={styles.container}>
+    <View style={{ flex: 1, backgroundColor: "white" }}>
+      <View style={styles.container}>
         <TextInput
           mode="outlined"
           placeholder="Search"
-          onChangeText={setsearch}
+          onChangeText={setSearch}
           value={search}
           style={styles.searchInput}
         />
-        <DataTable>
-          <DataTable.Header>
-            <DataTable.Title style={styles.columnWebsite}>Website</DataTable.Title>
-            <DataTable.Title style={styles.columnUsername}>Username</DataTable.Title>
-            <DataTable.Title style={styles.columnActions}>Actions</DataTable.Title>
-          </DataTable.Header>
+        {passwords.map((item) => (
+          <List.Item
+            key={item._id}
+            titleStyle={{ fontWeight: "bold", textTransform: "capitalize" }}
+            title={`${item.website} ${showModel}`}
+            description={item.username}
+            left={(props: any) => (
+              <IconButton
+                icon="star"
+                iconColor={item.isFavorite ? "yellow" : "gray"}
+                size={24}
+                onPress={() => toggleFavourite(item._id)}
+              />
+            )}
+            right={(props: any) => (
+              <TouchableOpacity onPress={() => openMenu(item)}>
+                <AntDesign name="setting" size={24} color="black" />
+              </TouchableOpacity>
+            )}
+          />
+        ))}
+      </View>
+      <PasswordForm visible={showModel} onDismiss={hideDialog} />
+      <PasswordViewScreen
+        open={openDrawer}
+        toggleDrawer={toggleDrawer}
+        password={password}
+      />
+      {visibleMenu ? <BottomDrawerExample closeMenu={closeMenu} /> : null}
 
-          {password.map((item: any) => (
-            <DataTable.Row key={item._id}>
-              <DataTable.Cell style={styles.columnWebsite}>{item.website}</DataTable.Cell>
-              <DataTable.Cell style={styles.columnUsername}>{item.username}</DataTable.Cell>
-              <DataTable.Cell style={styles.columnActions}>
-                <IconButton
-                  icon="dots-vertical"
-                  size={24}
-                  onPress={() => openMenu(item._id)}
-                />
-                <Menu
-                  visible={visible === item._id}
-                  onDismiss={closeMenu}
-                  anchor={<View />}
-                >
-                  <Menu.Item
-                    onPress={() => handleAction('launch')}
-                    title="Launch"
-                    leadingIcon="launch"
-                  />
-                  {(!item.sharedItem || item.sharedItem?.permissions?.edit) && (
-                    <Menu.Item
-                      onPress={() => handleAction('edit')}
-                      title="Edit password"
-                      leadingIcon="pencil"
-                    />
-                  )}
-                  {(!item.sharedItem || item.sharedItem?.permissions?.delete) && (
-                    <Menu.Item
-                      onPress={() => handleAction('delete')}
-                      title="Delete password"
-                      leadingIcon="delete"
-                    />
-                  )}
-                  {!item.sharedItem && (
-                    <Menu.Item
-                      onPress={() => handleAction('share')}
-                      title="Share password"
-                      leadingIcon="share"
-                    />
-                  )}
-                  {(!item.sharedItem || item.sharedItem?.permissions?.view) && (
-                    <Menu.Item
-                      onPress={() => handleAction('view')}
-                      title="View password"
-                      leadingIcon="eye"
-                    />
-                  )}
-                </Menu>
-              </DataTable.Cell>
-            </DataTable.Row>
-          ))}
-        </DataTable>
-      </ScrollView>
+      <TouchableOpacity
+        style={styles.newPasswordButton}
+        onPress={() => setShowModel(true)}
+      >
+        <AntDesign name="pluscircle" size={36} color="blue" />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -128,21 +130,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: 'white',
+    backgroundColor: "white",
   },
   searchInput: {
     marginBottom: 20,
   },
-  columnWebsite: {
-    flex: 2,
+  newPasswordButton: {
+    borderRadius: 4,
+    position: "absolute",
+    bottom: 10,
+    right: 10,
+    color: "#ff55d3",
+    alignItems: "center",
   },
-  columnUsername: {
-    flex: 3,
-  },
-  columnActions: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  newPasswordButtonText: {
+    color: "white",
+    fontWeight: "bold",
   },
 });
 
